@@ -1,7 +1,12 @@
 FROM debian:bullseye-slim
 
-# Install curl and unzip for Bun installation
-RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+# Update GPG keys and install dependencies
+RUN apt-get update -y && \
+  apt-get install -y gpg apt-transport-https && \
+  apt-get clean && \
+  gpg --list-keys && \
+  apt-get -y install curl unzip && \
+  rm -rf /var/lib/apt/lists/*
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
