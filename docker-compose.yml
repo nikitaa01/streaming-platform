@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  postgres-db:
+    image: postgres:latest
+    container_name: postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal_network
+
+  nest:
+    build: ./api
+    container_name: nest
+    restart: unless-stopped
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      DB_HOST: postgres-db
+      SECRET: ${SECRET}
+      PORT: ${PORT}
+      APP_URL: ${APP_URL}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      FILES_ROOT: /share
+    depends_on:
+      - postgres-db
+    volumes:
+      - ./share:/share
+    networks:
+      - internal_network
+
+  sveltekit:
+    build: ./frontend
+    restart: unless-stopped
+    container_name: sveltekit
+    networks:
+      - internal_network
+
+  samba:
+    image: dperson/samba
+    restart: unless-stopped
+    environment:
+      TZ: 'EST5EDT'
+    networks:
+      - internal_network
+    ports:
+      - "137:137/udp"
+      - "138:138/udp"
+      - "139:139/tcp"
+      - "445:445/tcp"
+    read_only: true
+    tmpfs:
+      - /tmp
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./share:/share
+    command: '-s "share;/share;yes;no;no;u" -u "u;u" -p'
+
+  nginx-proxy-manager:
+    image: "jc21/nginx-proxy-manager:latest"
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - internal_network
+
+volumes:
+  postgres_data:
+
+
+networks:
+  internal_network:
+    driver: bridge
