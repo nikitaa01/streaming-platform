@@ -63,7 +63,7 @@ services:
     tty: true
     volumes:
       - ./share:/share
-    command: '-s "share;/share;yes;no;no;u" -u "u;u" -p'
+    command: '-s "share;/share;yes;no;no;{SMB_USER}" -u "{SMB_USER};{SMB_PASSWORD}" -p'
 
   nginx-proxy-manager:
     image: "jc21/nginx-proxy-manager:latest"
